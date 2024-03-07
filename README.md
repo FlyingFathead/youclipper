@@ -52,4 +52,6 @@ Contributions to youclipper are welcome! If you have suggestions for improvement
 
 Developed by FlyingFathead, with ghostcode by ChaosWhisperer.
 
-[https://github.com/FlyingFathead/](https://github.com/FlyingFathead/)
+[FlyingFathead on GitHub](https://github.com/FlyingFathead/)
+
+[youclipper on GitHub](https://github.com/FlyingFathead/youclipper)
