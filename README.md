@@ -34,7 +34,7 @@ To clip a video without specifying milliseconds:
 python youclipper.py --url <video-url> --start mm:ss --end mm:ss --output <output-filename>
 ```
 
-## Clipping with Millisecond Precision
+### Clipping with Millisecond Precision
 
 To clip a video and specify times down to the millisecond:
 
