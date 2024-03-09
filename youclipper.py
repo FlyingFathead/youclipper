@@ -1,4 +1,4 @@
-# youclipper v0.05
+# youclipper v0.06
 # https://github.com/FlyingFathead/youclipper/
 # FlyingFathead 2024 ~*~ w/ ghostcode by ChaosWhisperer
 
@@ -62,9 +62,10 @@ def main():
 
     if not args.url:
         args.url = input('Enter YouTube video URL: ')
-    if not args.start or not args.end:
+    if not args.start:
         args.start = input('Enter start time (hh:mm:ss[.xxx] or mm:ss[.xxx]): ')
-        args.end = args.end
+    if not args.end:  # This line ensures that end time is always asked for user input if it's not provided via command-line arguments.
+        args.end = input('Enter end time (hh:mm:ss[.xxx] or mm:ss[.xxx]): ')
     if not args.output:
         args.output = input('Enter output filename without extension (default: output_clip): ').strip()
         if not args.output:
