@@ -3,7 +3,7 @@
 # https://github.com/FlyingFathead/youclipper/
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-version_number = 0.12
+version_number = 0.13
 
 import os
 import sys
@@ -11,6 +11,11 @@ import logging
 import platform
 import subprocess
 
+# for audio normalization
+from pydub import AudioSegment
+from pydub.effects import normalize
+
+# for clip creation
 import torch
 from moviepy.config import change_settings
 from moviepy.video.VideoClip import TextClip
@@ -24,6 +29,7 @@ TEXT_POSITION = 'middle'  # Vertical positioning. Options: 'top', 'middle', 'bot
 ENABLE_ANIMATION = True  # Enable/disable font size animation
 ANIMATION_SPEED = 0.05  # Speed of animation in seconds
 WORD_GAP = 0.1  # Time gap between words in seconds
+NORMALIZE_AUDIO = True  # Set to True to normalize audio to -0.1dBFS
 
 # Font options
 FONT_SIZE = 40
@@ -82,6 +88,15 @@ def configure_imagemagick():
         logging.info("Configuring ImageMagick for Linux/macOS.")
         check_imagemagick()
         change_settings({"IMAGEMAGICK_BINARY": "convert"})  # Typical binary name for ImageMagick on Unix-like systems
+
+def normalize_audio(audio_path):
+    logging.info("Normalizing audio...")
+    audio = AudioSegment.from_file(audio_path)
+    normalized_audio = normalize(audio)
+    normalized_audio_path = f"{os.path.splitext(audio_path)[0]}_normalized{os.path.splitext(audio_path)[1]}"
+    normalized_audio.export(normalized_audio_path, format="mp4")
+    logging.info(f"Audio normalized and saved to: {normalized_audio_path}")
+    return normalized_audio_path
 
 def transcribe_video_whisperx(video_path):
     logging.info("Loading WhisperX model...")
@@ -208,6 +223,9 @@ def main():
     if not os.path.isfile(input_file):
         print(f"Error: File '{input_file}' not found.")
         sys.exit(1)
+
+    if NORMALIZE_AUDIO:
+        input_file = normalize_audio(input_file)
 
     configure_imagemagick()
     

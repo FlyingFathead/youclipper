@@ -88,6 +88,7 @@ USE_WHISPERX = True  # Set to False to use OpenAI's Whisper
 ```
 
 ## Changelog
+- v0.13 - (yousubtitler) normalize audio to -0.1dBFS by default (can be set via true/false on `NORMALIZE_AUDIO` variable)
 - v0.12 - (yousubtitler) text animations (can be configured from `yousubtitler.py`)
 - v0.11 - (yousubtitler) added confirmation prompts for all subtitle entries + confirm overwrites
 - v0.10 - (yousubtitler) check for CUDA compatible GPU availablility on launch
