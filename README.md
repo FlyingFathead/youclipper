@@ -16,6 +16,7 @@ Before you use `youclipper`, ensure you have the following dependencies installe
 - Python 3
 - `yt-dlp`
 - `ffmpeg`
+- `pydub`
 - `openai-whisper` (or `whisperx`)
 - `moviepy`
 

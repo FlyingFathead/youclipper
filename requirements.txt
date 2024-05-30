@@ -4,6 +4,9 @@ moviepy
 torch
 torchaudio
 
+# for audio normalizing
+pydub
+
 # Keyboard package for subtitle verification on `yousubtitler`
 # (not in use atm)
 # keyboard
