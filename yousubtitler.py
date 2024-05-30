@@ -3,7 +3,7 @@
 # https://github.com/FlyingFathead/youclipper/
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-version_number = 0.14
+version_number = 0.141
 
 import os
 import sys
@@ -29,17 +29,19 @@ TEXT_POSITION = 'middle'  # Vertical positioning. Options: 'top', 'middle', 'bot
 ENABLE_ANIMATION = True  # Enable/disable font size animation
 ANIMATION_SPEED = 0.05  # Speed of animation in seconds
 WORD_GAP = 0.1  # Time gap between words in seconds
+COMPRESS_AUDIO = True  # Set to True to apply audio compression
 NORMALIZE_AUDIO = True  # Set to True to normalize audio to -0.1dBFS
 
 # Font options
 FONT_SIZE = 40
 # To animate the font (i.e. make it grow during display):
-INITIAL_FONT_SIZE = 40
-FINAL_FONT_SIZE = 120
+INITIAL_FONT_SIZE = 60
+FINAL_FONT_SIZE = 200
 HIGHLIGHT_COLOR = 'yellow'
 TEXT_COLOR = 'black'
 # FONT = 'Arial-Bold'
 FONT = 'Comic-Sans-MS'
+FONT_BOLD = True  # Set to True to use a bold version of the font
 
 # Choose between `openai-whisper` and `whisperx`
 if USE_WHISPERX:
@@ -89,14 +91,23 @@ def configure_imagemagick():
         check_imagemagick()
         change_settings({"IMAGEMAGICK_BINARY": "convert"})  # Typical binary name for ImageMagick on Unix-like systems
 
-def normalize_audio_ffmpeg(input_file):
-    logging.info("Normalizing audio using ffmpeg...")
-    output_file = f"{os.path.splitext(input_file)[0]}_normalized.mp4"
+def process_audio_ffmpeg(input_file):
+    logging.info("Processing audio using ffmpeg...")
+    output_file = f"{os.path.splitext(input_file)[0]}_processed.mp4"
+    audio_filters = []
+
+    if NORMALIZE_AUDIO:
+        audio_filters.append('loudnorm')
+
+    if COMPRESS_AUDIO:
+        audio_filters.append('acompressor')
+
+    audio_filter_str = ','.join(audio_filters)
     command = [
-        'ffmpeg', '-i', input_file, '-af', 'volume=0.1', output_file
+        'ffmpeg', '-i', input_file, '-af', audio_filter_str, output_file
     ]
     subprocess.run(command, check=True)
-    logging.info(f"Audio normalized and saved to: {output_file}")
+    logging.info(f"Audio processed and saved to: {output_file}")
     return output_file
 
 # (this uses pydub, currently not in use)
@@ -172,6 +183,9 @@ def create_highlighted_text(text, start_time, duration, video_width, initial_fon
     else:
         position = ('center', 'bottom')
 
+    # Determine the font to use
+    font_to_use = FONT + '-Bold' if FONT_BOLD else FONT
+
     for word in words:
         word_clips = []
         for i in range(int(word_duration / update_interval) + 1):
@@ -181,7 +195,7 @@ def create_highlighted_text(text, start_time, duration, video_width, initial_fon
                 word,
                 fontsize=fontsize,
                 color=text_color,
-                font=FONT,
+                font=font_to_use,
                 stroke_color=highlight_color,
                 stroke_width=3,
                 size=(video_width, None),
@@ -233,8 +247,8 @@ def main():
         print(f"Error: File '{input_file}' not found.")
         sys.exit(1)
 
-    if NORMALIZE_AUDIO:
-        input_file = normalize_audio_ffmpeg(input_file)
+    if NORMALIZE_AUDIO or COMPRESS_AUDIO:
+        input_file = process_audio_ffmpeg(input_file)
 
     configure_imagemagick()
     
