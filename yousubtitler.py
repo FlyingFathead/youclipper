@@ -3,7 +3,7 @@
 # https://github.com/FlyingFathead/youclipper/
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-version_number = 0.13
+version_number = 0.14
 
 import os
 import sys
@@ -11,9 +11,9 @@ import logging
 import platform
 import subprocess
 
-# for audio normalization
-from pydub import AudioSegment
-from pydub.effects import normalize
+# (not in use atm) for audio normalization
+# from pydub import AudioSegment
+# from pydub.effects import normalize
 
 # for clip creation
 import torch
@@ -89,14 +89,25 @@ def configure_imagemagick():
         check_imagemagick()
         change_settings({"IMAGEMAGICK_BINARY": "convert"})  # Typical binary name for ImageMagick on Unix-like systems
 
-def normalize_audio(audio_path):
-    logging.info("Normalizing audio...")
-    audio = AudioSegment.from_file(audio_path)
-    normalized_audio = normalize(audio)
-    normalized_audio_path = f"{os.path.splitext(audio_path)[0]}_normalized{os.path.splitext(audio_path)[1]}"
-    normalized_audio.export(normalized_audio_path, format="mp4")
-    logging.info(f"Audio normalized and saved to: {normalized_audio_path}")
-    return normalized_audio_path
+def normalize_audio_ffmpeg(input_file):
+    logging.info("Normalizing audio using ffmpeg...")
+    output_file = f"{os.path.splitext(input_file)[0]}_normalized.mp4"
+    command = [
+        'ffmpeg', '-i', input_file, '-af', 'volume=0.1', output_file
+    ]
+    subprocess.run(command, check=True)
+    logging.info(f"Audio normalized and saved to: {output_file}")
+    return output_file
+
+# (this uses pydub, currently not in use)
+# def normalize_audio(audio_path):
+#     logging.info("Normalizing audio...")
+#     audio = AudioSegment.from_file(audio_path)
+#     normalized_audio = normalize(audio)
+#     normalized_audio_path = f"{os.path.splitext(audio_path)[0]}_normalized{os.path.splitext(audio_path)[1]}"
+#     normalized_audio.export(normalized_audio_path, format="mp4")
+#     logging.info(f"Audio normalized and saved to: {normalized_audio_path}")
+#     return normalized_audio_path
 
 def transcribe_video_whisperx(video_path):
     logging.info("Loading WhisperX model...")
@@ -141,12 +152,11 @@ def confirm_subtitles(segments):
 def check_and_confirm_overwrite(output_file):
     if os.path.exists(output_file):
         print(f"Warning: The output file '{output_file}' already exists.")
-        while True:
-            confirm = input("Do you want to overwrite it? [Y/n] ").strip().lower()
-            if confirm in ['', 'y']:
-                return True
-            elif confirm == 'n':
-                return False
+        confirm = input("Do you want to overwrite it? [Y/n] ").strip().lower()
+        if confirm not in ['', 'y']:
+            logging.info("Operation canceled by the user.")
+            return False
+    return True
 
 def create_highlighted_text(text, start_time, duration, video_width, initial_font_size=INITIAL_FONT_SIZE, final_font_size=FINAL_FONT_SIZE, highlight_color=HIGHLIGHT_COLOR, text_color=TEXT_COLOR, text_position=TEXT_POSITION):
     words = text.split()
@@ -207,7 +217,6 @@ def create_subtitled_video(input_file, segments):
     output_file = f"{os.path.splitext(input_file)[0]}_subtitled.mp4"
 
     if not check_and_confirm_overwrite(output_file):
-        logging.info("Operation canceled by the user.")
         return
 
     logging.info(f"Writing subtitled video to: {output_file}")
@@ -225,7 +234,7 @@ def main():
         sys.exit(1)
 
     if NORMALIZE_AUDIO:
-        input_file = normalize_audio(input_file)
+        input_file = normalize_audio_ffmpeg(input_file)
 
     configure_imagemagick()
     
