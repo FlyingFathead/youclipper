@@ -1,6 +1,12 @@
 yt-dlp
 git+https://github.com/openai/whisper.git
 moviepy
-git+https://github.com/m-bain/whisperx.git
 torch
 torchaudio
+
+# Keyboard package for subtitle verification on `yousubtitler`
+keyboard
+
+# Add whisperx as an optional dependency
+# To install with whisperx, use: pip install -r requirements.txt whisperx
+whisperx; extra == "whisperx"

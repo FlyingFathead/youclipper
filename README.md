@@ -18,6 +18,7 @@ Before you use `youclipper`, ensure you have the following dependencies installe
 - `ffmpeg`
 - `openai-whisper` (or `whisperx`)
 - `moviepy`
+- `keyboard`
 
 You can install `yt-dlp` and `ffmpeg` using your operating system's package manager or download them directly from their official websites.
 
@@ -32,6 +33,14 @@ choco install ffmpeg
 
 # On MacOS using Homebrew
 brew install ffmpeg
+```
+
+### Optional Dependencies
+
+To install optional dependencies like `whisperx`, run:
+
+```sh
+pip install git+https://github.com/m-bain/whisperx.git
 ```
 
 ## Usage
@@ -80,10 +89,12 @@ USE_WHISPERX = True  # Set to False to use OpenAI's Whisper
 ```
 
 ## Changelog
-- v0.09 - Added support for word-level highlighting subtitles using `whisperx` or `openai-whisper`.
-- v0.08 - included `yousubtitler.py` for quick, automatic hard subtitling of clips
-- v0.07 - recode instead of copying when clipping to avoid video/audio desync issues
-- v0.06 - first public release
+- v0.11 - (yousubtitler) added confirmation prompts for all subtitle entries + confirm overwrites
+- v0.10 - (yousubtitler) check for CUDA compatible GPU availablility on launch
+- v0.09 - (yousubtitler) added support for word-level highlighting subtitles using `whisperx` or `openai-whisper`.
+- v0.08 - (yousubtitler) included `yousubtitler.py` for quick, automatic hard subtitling of clips
+- v0.07 - (youclipper) recode instead of copying when clipping to avoid video/audio desync issues
+- v0.06 - (youclipper) first public release
 
 ## Contributing
 
@@ -92,7 +103,5 @@ Contributions to youclipper are welcome! If you have suggestions for improvement
 ## About
 
 Developed by FlyingFathead, with ghostcode by ChaosWhisperer.
-
-[FlyingFathead on GitHub](https://github.com/FlyingFathead/)
-
-[youclipper on GitHub](https://github.com/FlyingFathead/youclipper)
+- [FlyingFathead on GitHub](https://github.com/FlyingFathead/)
+- [youclipper on GitHub](https://github.com/FlyingFathead/youclipper)
