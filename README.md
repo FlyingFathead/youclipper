@@ -44,6 +44,10 @@ python youclipper.py --url <video-url> --start mm:ss.xxx --end mm:ss.xxx --outpu
 
 Note: Replace <video-url> with the actual URL of the video you wish to clip, mm:ss with the start and end times in minutes and seconds, xxx with milliseconds, and <output-filename> with the desired name of your output file (without adding the .mp4 extension, as it is appended automatically).
 
+## Changelog
+- v0.07 - recode instead of copying when clipping to avoid video/audio desync issues
+- v0.06 - first public release
+
 ## Contributing
 
 Contributions to youclipper are welcome! If you have suggestions for improvements or encounter any issues, please open an issue or submit a pull request.

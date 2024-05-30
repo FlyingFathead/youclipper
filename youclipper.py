@@ -1,4 +1,4 @@
-# youclipper v0.06
+# youclipper v0.07
 # https://github.com/FlyingFathead/youclipper/
 # FlyingFathead 2024 ~*~ w/ ghostcode by ChaosWhisperer
 
@@ -46,11 +46,29 @@ def download_video(url, start_ms, end_ms, output):
     
     ffmpeg_command = [
         'ffmpeg', '-i', downloaded_file, '-ss', str(start_ms / 1000), '-to', str(end_ms / 1000),
-        '-c', 'copy', output
+        '-c:v', 'libx264', '-c:a', 'aac', output
     ]
     subprocess.call(ffmpeg_command)
 
     os.remove(downloaded_file)
+
+# (old method, copies without re-encoding, better quality but usually causes video/audio desync issues)
+# def download_video(url, start_ms, end_ms, output):
+#     temp_file = 'temp_video'
+#     subprocess.call(['yt-dlp', url, '-o', f'{temp_file}.%(ext)s'])
+    
+#     downloaded_files = glob.glob(f'{temp_file}.*')
+#     if not downloaded_files:
+#         raise Exception("No files downloaded.")
+#     downloaded_file = downloaded_files[0]
+    
+#     ffmpeg_command = [
+#         'ffmpeg', '-i', downloaded_file, '-ss', str(start_ms / 1000), '-to', str(end_ms / 1000),
+#         '-c', 'copy', output
+#     ]
+#     subprocess.call(ffmpeg_command)
+
+#     os.remove(downloaded_file)
 
 def main():
     parser = argparse.ArgumentParser(description='YouClipper: Download and clip YouTube videos easily.')
@@ -61,7 +79,7 @@ def main():
     args = parser.parse_args()
 
     if not args.url:
-        args.url = input('Enter YouTube video URL: ')
+        args.url = input('Enter video URL: ')
     if not args.start:
         args.start = input('Enter start time (hh:mm:ss[.xxx] or mm:ss[.xxx]): ')
     if not args.end:  # This line ensures that end time is always asked for user input if it's not provided via command-line arguments.
