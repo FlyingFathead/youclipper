@@ -1,1 +1,3 @@
 yt-dlp
+openai-whisper
+moviepy

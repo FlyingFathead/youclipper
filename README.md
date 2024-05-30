@@ -10,13 +10,26 @@
 
 ## Installation
 
-Before you use `youclipper`, ensure you have the following dependencies installed:
+Before you use `youclipper`, ensure you have the following dependencies installed (or use the included `requirements.txt` with `pip install -r requirements.txt`):
 
 - Python 3
 - `yt-dlp`
 - `ffmpeg`
 
 You can install `yt-dlp` and `ffmpeg` using your operating system's package manager or download them directly from their official websites.
+
+Here's how you can install `ffmpeg` on commonly used operating systems:
+
+```bash
+# On Ubuntu or Debian
+sudo apt update && sudo apt install ffmpeg
+
+# On Windows using Chocolatey
+choco install ffmpeg
+
+# On MacOS using Homebrew
+brew install ffmpeg
+```
 
 ## Usage
 
@@ -44,7 +57,18 @@ python youclipper.py --url <video-url> --start mm:ss.xxx --end mm:ss.xxx --outpu
 
 Note: Replace <video-url> with the actual URL of the video you wish to clip, mm:ss with the start and end times in minutes and seconds, xxx with milliseconds, and <output-filename> with the desired name of your output file (without adding the .mp4 extension, as it is appended automatically).
 
+### Subtitling your clips
+
+You can use the included `yousubtitler.py` to subtitle your filed (requires `ImageMagick` as well as `moviepy` and `openai-whisper` pip packages):
+
+```bash
+python yousubtitler.py inputfile.mp4
+```
+
+This will automatically create a subtitled version of your clip which will be in the format: `<original_filename>_subtitled.mp4`.
+
 ## Changelog
+- v0.08 - included `yousubtitler.py` for quick, automatic hard subtitling of clips
 - v0.07 - recode instead of copying when clipping to avoid video/audio desync issues
 - v0.06 - first public release
 

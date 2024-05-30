@@ -1,4 +1,4 @@
-# youclipper v0.07
+# youclipper v0.08
 # https://github.com/FlyingFathead/youclipper/
 # FlyingFathead 2024 ~*~ w/ ghostcode by ChaosWhisperer
 
