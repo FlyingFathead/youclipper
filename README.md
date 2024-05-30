@@ -18,7 +18,6 @@ Before you use `youclipper`, ensure you have the following dependencies installe
 - `ffmpeg`
 - `openai-whisper` (or `whisperx`)
 - `moviepy`
-- `keyboard`
 
 You can install `yt-dlp` and `ffmpeg` using your operating system's package manager or download them directly from their official websites.
 

@@ -1,28 +1,35 @@
 # yousubtitler.py
-# yousubtitler v0.11
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # https://github.com/FlyingFathead/youclipper/
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+version_number = 0.12
 
 import os
 import sys
 import logging
 import platform
 import subprocess
-import keyboard
 
 import torch
-from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
 from moviepy.config import change_settings
+from moviepy.video.VideoClip import TextClip
+from moviepy.editor import VideoFileClip, CompositeVideoClip, concatenate_videoclips
 
 # Configuration flags
 USE_WHISPERX = False  # Set to False to use OpenAI's Whisper
 WORD_TIMESTAMPS = True  # Set to True to include word-level timestamps
 CONFIRM_SUBTITLES = True  # Set to True to confirm subtitles with the user
 TEXT_POSITION = 'middle'  # Vertical positioning. Options: 'top', 'middle', 'bottom'
+ENABLE_ANIMATION = True  # Enable/disable font size animation
+ANIMATION_SPEED = 0.05  # Speed of animation in seconds
+WORD_GAP = 0.1  # Time gap between words in seconds
 
 # Font options
 FONT_SIZE = 40
+# To animate the font (i.e. make it grow during display):
+INITIAL_FONT_SIZE = 40
+FINAL_FONT_SIZE = 120
 HIGHLIGHT_COLOR = 'yellow'
 TEXT_COLOR = 'black'
 # FONT = 'Arial-Bold'
@@ -104,19 +111,8 @@ def confirm_subtitles(segments):
             while True:
                 print(f"\nOld subtitle: '{old_text}'")
                 print(f"New subtitle: '{new_text}'")
-                print("Use the new subtitle? [Y/n] ", end='', flush=True)
-                
-                while True:
-                    if keyboard.is_pressed('y') or keyboard.is_pressed('enter'):
-                        confirm = 'y'
-                        print('Y')
-                        break
-                    elif keyboard.is_pressed('n'):
-                        confirm = 'n'
-                        print('N')
-                        break
-                
-                if confirm == 'y':
+                confirm = input("Use the new subtitle? [Y/n] ").strip().lower()
+                if confirm in ['', 'y']:
                     segment["text"] = new_text
                     print(f"Using the new subtitle: '{new_text}'")
                     confirmed_segments.append(segment)
@@ -130,20 +126,19 @@ def confirm_subtitles(segments):
 def check_and_confirm_overwrite(output_file):
     if os.path.exists(output_file):
         print(f"Warning: The output file '{output_file}' already exists.")
-        print("Do you want to overwrite it? [Y/n] ", end='', flush=True)
-        
         while True:
-            if keyboard.is_pressed('y') or keyboard.is_pressed('enter'):
-                print('Y')
+            confirm = input("Do you want to overwrite it? [Y/n] ").strip().lower()
+            if confirm in ['', 'y']:
                 return True
-            elif keyboard.is_pressed('n'):
-                print('N')
+            elif confirm == 'n':
                 return False
 
-def create_highlighted_text(text, start_time, duration, video_width, font_size=FONT_SIZE, highlight_color=HIGHLIGHT_COLOR, text_color=TEXT_COLOR, text_position=TEXT_POSITION):
+def create_highlighted_text(text, start_time, duration, video_width, initial_font_size=INITIAL_FONT_SIZE, final_font_size=FINAL_FONT_SIZE, highlight_color=HIGHLIGHT_COLOR, text_color=TEXT_COLOR, text_position=TEXT_POSITION):
     words = text.split()
     text_clips = []
     word_start_time = start_time
+    word_duration = (duration - WORD_GAP * (len(words) - 1)) / len(words)  # Adjust word duration to include word gap
+    update_interval = ANIMATION_SPEED  # Update font size every animation speed interval
 
     if text_position == 'top':
         position = ('center', 'top')
@@ -151,22 +146,38 @@ def create_highlighted_text(text, start_time, duration, video_width, font_size=F
         position = ('center', 'center')
     else:
         position = ('center', 'bottom')
-    
+
     for word in words:
-        txt_clip = TextClip(word, fontsize=font_size, color=text_color, font=FONT, stroke_color=highlight_color, stroke_width=3, size=(video_width, None), method='caption')
-        txt_clip = txt_clip.set_start(word_start_time).set_duration(duration / len(words))
-        txt_clip = txt_clip.set_pos(position)
-        
-        text_clips.append(txt_clip)
-        word_start_time += duration / len(words)
-    
+        word_clips = []
+        for i in range(int(word_duration / update_interval) + 1):
+            t = i * update_interval
+            fontsize = initial_font_size + (final_font_size - initial_font_size) * (t / word_duration)
+            txt_clip = TextClip(
+                word,
+                fontsize=fontsize,
+                color=text_color,
+                font=FONT,
+                stroke_color=highlight_color,
+                stroke_width=3,
+                size=(video_width, None),
+                method='caption'
+            )
+            txt_clip = txt_clip.set_start(word_start_time + t).set_duration(update_interval)
+            txt_clip = txt_clip.set_pos(position)
+            word_clips.append(txt_clip)
+
+        if word_clips:
+            text_clips.extend(word_clips)
+
+        word_start_time += word_duration + WORD_GAP
+
     return text_clips
 
 def create_subtitled_video(input_file, segments):
     logging.info(f"Loading video file: {input_file}")
     video = VideoFileClip(input_file)
     subtitles = []
-    
+
     for segment in segments:
         text = segment["text"]
         start_time = segment["start"]
@@ -175,15 +186,15 @@ def create_subtitled_video(input_file, segments):
         logging.info(f"Creating subtitle for text: '{text}' from {start_time} to {end_time}")
         subtitle_clips = create_highlighted_text(text, start_time, duration, video.size[0])
         subtitles.extend(subtitle_clips)
-    
+
     logging.info("Combining video and subtitles...")
     result = CompositeVideoClip([video, *subtitles])
     output_file = f"{os.path.splitext(input_file)[0]}_subtitled.mp4"
-    
+
     if not check_and_confirm_overwrite(output_file):
         logging.info("Operation canceled by the user.")
         return
-    
+
     logging.info(f"Writing subtitled video to: {output_file}")
     result.write_videofile(output_file, fps=video.fps)
     logging.info("Subtitled video created successfully.")
@@ -204,8 +215,10 @@ def main():
 
     logging.info("Starting transcription and subtitling process...")
     if USE_WHISPERX:
+        logging.info("Using WhisperX for the transcription.")
         segments = transcribe_video_whisperx(input_file)
     else:
+        logging.info("Using Whisper for the transcription.")
         segments = transcribe_video_whisper(input_file)
     
     if CONFIRM_SUBTITLES:

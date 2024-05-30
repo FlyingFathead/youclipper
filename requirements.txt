@@ -5,7 +5,8 @@ torch
 torchaudio
 
 # Keyboard package for subtitle verification on `yousubtitler`
-keyboard
+# (not in use atm)
+# keyboard
 
 # Add whisperx as an optional dependency
 # To install with whisperx, use: pip install -r requirements.txt whisperx
