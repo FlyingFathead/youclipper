@@ -1,12 +1,13 @@
 # youclipper
 
-`youclipper` is a Python-based command-line tool that leverages `yt-dlp` and `ffmpeg` to download and clip sections from online videos, such as those available on YouTube. It allows you to specify the exact start and end times, even down to milliseconds, to get the precise clip you need.
+`youclipper` is a Python-based command-line tool that leverages `yt-dlp` and `ffmpeg` to download and clip sections from online videos, such as those available on YouTube. It allows you to specify the exact start and end times, even down to milliseconds, to get the precise clip you need. You can also use the included `yousubtitler` to automatically create hard subtitles for your created clips.
 
 ## Features
 
 - Download videos from YouTube and other platforms supported by `yt-dlp`.
 - Clip videos to your specified start and end times with support for millisecond precision.
 - Output your clip directly to a specified filename.
+- Subtitle your clips with word-level highlighting.
 
 ## Installation
 
@@ -15,6 +16,8 @@ Before you use `youclipper`, ensure you have the following dependencies installe
 - Python 3
 - `yt-dlp`
 - `ffmpeg`
+- `openai-whisper` (or `whisperx`)
+- `moviepy`
 
 You can install `yt-dlp` and `ffmpeg` using your operating system's package manager or download them directly from their official websites.
 
@@ -57,9 +60,9 @@ python youclipper.py --url <video-url> --start mm:ss.xxx --end mm:ss.xxx --outpu
 
 Note: Replace <video-url> with the actual URL of the video you wish to clip, mm:ss with the start and end times in minutes and seconds, xxx with milliseconds, and <output-filename> with the desired name of your output file (without adding the .mp4 extension, as it is appended automatically).
 
-### Subtitling your clips
+### Subtitling Your Clips
 
-You can use the included `yousubtitler.py` to subtitle your filed (requires `ImageMagick` as well as `moviepy` and `openai-whisper` pip packages):
+You can use the included yousubtitler.py to subtitle your videos. This requires `ImageMagick` as well as the `moviepy` and `openai-whisper` (or `whisperx`) pip packages:
 
 ```bash
 python yousubtitler.py inputfile.mp4
@@ -67,7 +70,17 @@ python yousubtitler.py inputfile.mp4
 
 This will automatically create a subtitled version of your clip which will be in the format: `<original_filename>_subtitled.mp4`.
 
+### Configuration Flag for Subtitling
+
+To choose between `openai-whisper` and `whisperx` for subtitling, set the `USE_WHISPERX` flag in `yousubtitler.py`:
+
+```python
+# yousubtitler.py
+USE_WHISPERX = True  # Set to False to use OpenAI's Whisper
+```
+
 ## Changelog
+- v0.09 - Added support for word-level highlighting subtitles using `whisperx` or `openai-whisper`.
 - v0.08 - included `yousubtitler.py` for quick, automatic hard subtitling of clips
 - v0.07 - recode instead of copying when clipping to avoid video/audio desync issues
 - v0.06 - first public release

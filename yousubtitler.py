@@ -1,5 +1,5 @@
 # yousubtitler.py
-# yousubtitler v0.08
+# yousubtitler v0.09
 
 import os
 import sys
@@ -7,8 +7,15 @@ import logging
 import platform
 import subprocess
 from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
-import whisper
 from moviepy.config import change_settings
+
+# Configuration flags
+USE_WHISPERX = True  # Set to False to use OpenAI's Whisper
+
+if USE_WHISPERX:
+    import whisperx
+else:
+    import whisper
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -44,26 +51,38 @@ def configure_imagemagick():
         check_imagemagick()
         change_settings({"IMAGEMAGICK_BINARY": "convert"})  # Typical binary name for ImageMagick on Unix-like systems
 
-def transcribe_video(video_path):
-    logging.info("Loading Whisper model...")
-    model = whisper.load_model("medium.en")
-    logging.info(f"Transcribing video: {video_path}")
-    result = model.transcribe(video_path)
-    logging.info("Transcription completed.")
+def transcribe_video_whisperx(video_path):
+    logging.info("Loading WhisperX model...")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = whisperx.load_model("large-v2", device)
+    audio = whisperx.load_audio(video_path)
+    result = model.transcribe(audio)
+    
+    model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
+    result = whisperx.align(result["segments"], model_a, metadata, audio, device)
+    
     return result["segments"]
 
-def create_highlighted_text(text, start_time, duration, font_size=40, highlight_color='yellow', text_color='black'):
-    txt_clip = TextClip(text, fontsize=font_size, color=text_color, font='Arial-Bold', bg_color=highlight_color)
-    txt_clip = txt_clip.set_start(start_time).set_duration(duration).set_pos(('center', 'bottom'))
-    txt_clip = txt_clip.crossfadein(0.5).crossfadeout(0.5)
-    return txt_clip
+def transcribe_video_whisper(video_path):
+    logging.info("Loading Whisper model...")
+    model = whisper.load_model("medium.en")
+    result = model.transcribe(video_path)
+    return result["segments"]
 
-# def create_highlighted_text(text, start_time, duration, font_size=40, highlight_color='yellow', text_color='black'):
-#     txt_clip = TextClip(text, fontsize=font_size, color=text_color, font='Arial-Bold')
-#     txt_clip = txt_clip.on_color(size=(txt_clip.w + 20, txt_clip.h + 20), color=highlight_color, pos=(10, 10))
-#     txt_clip = txt_clip.set_start(start_time).set_duration(duration).set_pos(('center', 'bottom'))
-#     txt_clip = txt_clip.crossfadein(0.5).crossfadeout(0.5)
-#     return txt_clip
+def create_highlighted_text(text, start_time, duration, video_width, font_size=40, highlight_color='yellow', text_color='black'):
+    words = text.split()
+    text_clips = []
+    word_start_time = start_time
+    
+    for word in words:
+        txt_clip = TextClip(word, fontsize=font_size, color=text_color, font='Arial-Bold', bg_color=highlight_color, size=(video_width, None), method='caption')
+        txt_clip = txt_clip.set_start(word_start_time).set_duration(duration / len(words))
+        txt_clip = txt_clip.set_pos(('center', 'bottom'))
+        
+        text_clips.append(txt_clip)
+        word_start_time += duration / len(words)
+    
+    return text_clips
 
 def create_subtitled_video(input_file, segments):
     logging.info(f"Loading video file: {input_file}")
@@ -76,8 +95,8 @@ def create_subtitled_video(input_file, segments):
         end_time = segment["end"]
         duration = end_time - start_time
         logging.info(f"Creating subtitle for text: '{text}' from {start_time} to {end_time}")
-        subtitle_clip = create_highlighted_text(text, start_time, duration)
-        subtitles.append(subtitle_clip)
+        subtitle_clips = create_highlighted_text(text, start_time, duration, video.size[0])
+        subtitles.extend(subtitle_clips)
     
     logging.info("Combining video and subtitles...")
     result = CompositeVideoClip([video, *subtitles])
@@ -99,7 +118,10 @@ def main():
     configure_imagemagick()
     
     logging.info("Starting transcription and subtitling process...")
-    segments = transcribe_video(input_file)
+    if USE_WHISPERX:
+        segments = transcribe_video_whisperx(input_file)
+    else:
+        segments = transcribe_video_whisper(input_file)
     
     logging.info("Starting video creation with subtitles...")
     create_subtitled_video(input_file, segments)
